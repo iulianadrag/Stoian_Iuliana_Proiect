@@ -1,8 +1,8 @@
-﻿@page
+﻿@page 
 @model Stoian_Iuliana_Proiect.Pages.Movies.IndexModel
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Film";
 }
 
 <h1>Index</h1>
@@ -25,12 +25,21 @@
             <th>
                 @Html.DisplayNameFor(model => model.Movie[0].Studio.StudioName)
             </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Movie[0].MovieCategories)
+            </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model.Movie) {
-        <tr>
+        @foreach (var item in Model.MovieD.Movies)
+        {
+            string selectedRow = "";
+            if (item.ID == Model.MovieID)
+            {
+                selectedRow = "table-success";
+            }
+        <tr class="@selectedRow">
             <td>
                 @Html.DisplayFor(modelItem => item.Title)
             </td>
@@ -44,11 +53,19 @@
                 @Html.DisplayFor(modelItem => item.Studio.StudioName)
             </td>
             <td>
+                @{
+                    foreach (var category in item.MovieCategories)
+                    {
+                        @category.Category.ID @: @category.Category.CategoryName <br />
+                    }
+                }
+            </td>
+            <td>
                 <a asp-page="./Edit" asp-route-id="@item.ID">Edit</a> |
                 <a asp-page="./Details" asp-route-id="@item.ID">Details</a> |
                 <a asp-page="./Delete" asp-route-id="@item.ID">Delete</a>
             </td>
         </tr>
-}
+        }
     </tbody>
 </table>

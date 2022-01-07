@@ -11,7 +11,7 @@ using Stoian_Iuliana_Proiect.Models;
 
 namespace Stoian_Iuliana_Proiect.Pages.Movies
 {
-    public class EditModel : PageModel
+    public class EditModel : MovieCategoriesPageModel
     {
         private readonly Stoian_Iuliana_Proiect.Data.Stoian_Iuliana_ProiectContext _context;
 
@@ -30,44 +30,51 @@ namespace Stoian_Iuliana_Proiect.Pages.Movies
                 return NotFound();
             }
 
-            Movie = await _context.Movie.FirstOrDefaultAsync(m => m.ID == id);
+            Movie = await _context.Movie.Include(b => b.Studio)
+.Include(b => b.MovieCategories).ThenInclude(b => b.Category)
+.AsNoTracking().FirstOrDefaultAsync(m => m.ID == id);
 
             if (Movie == null)
             {
                 return NotFound();
             }
+            PopulateAssignedCategoryData(_context, Movie);
             ViewData["StudioID"] = new SelectList(_context.Set<Studio>(), "ID", "StudioName");
             return Page();
         }
 
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://aka.ms/RazorPagesCRUD.
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostAsync(int? id, string[]
+selectedCategories)
         {
-            if (!ModelState.IsValid)
+            if (id == null)
             {
-                return Page();
+                return NotFound();
             }
-
-            _context.Attach(Movie).State = EntityState.Modified;
-
-            try
+            var movieToUpdate = await _context.Movie
+.Include(i => i.Studio)
+.Include(i => i.MovieCategories)
+.ThenInclude(i => i.Category)
+.FirstOrDefaultAsync(s => s.ID == id);
+            if (movieToUpdate == null)
             {
+                return NotFound();
+            }
+            if (await TryUpdateModelAsync<Movie>(
+movieToUpdate,
+"Movie",
+i => i.Title, i => i.Regizor,
+i => i.ReleaseDate, i => i.Studio))
+            {
+                UpdateMovieCategories(_context, selectedCategories, movieToUpdate);
                 await _context.SaveChangesAsync();
+                return RedirectToPage("./Index");
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!MovieExists(Movie.ID))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            UpdateMovieCategories(_context, selectedCategories, movieToUpdate);
+            PopulateAssignedCategoryData(_context, movieToUpdate);
+            return Page();
 
-            return RedirectToPage("./Index");
         }
 
         private bool MovieExists(int id)
